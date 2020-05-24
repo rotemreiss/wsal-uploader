@@ -66,11 +66,10 @@ s3://mywordpress.com/server-aws--wp-audit-logs-config-14.json
 ```
 
 ## Advanced Usage
-- The tool also supports multiple configuration files (for multiple sites) 
-```bash
-# Clone the configuration file to config2.py (the name is up to you..) and use the -c flag
-python wsal_uploader.py -c config2
-```
+Short Form          | Long Form          | Description
+--------------------|--------------------|--------------------
+-c                  | --config           | Path for another config file (without the py extension)
+N/A                 | --dry-run          | Do not update the logs delta and do not ship it to S3
 
 ---
 

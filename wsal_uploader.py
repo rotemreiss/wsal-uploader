@@ -107,21 +107,22 @@ def upload_json_to_s3(data, last_id):
     with open(file_path, 'w') as outfile:
         json.dump(data, outfile)
 
-    s3_client = boto3.client(
-        's3',
-        aws_access_key_id=config.aws_access_key_id,
-        aws_secret_access_key=config.aws_secret_access_key
-    )
+    if not args.is_dry:
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=config.aws_access_key_id,
+            aws_secret_access_key=config.aws_secret_access_key
+        )
 
-    # Upload the file
-    hostname = socket.gethostname()
-    object_name = f'wordpress/{config.website_domain}/{hostname}--{file_name}'
+        # Upload the file
+        hostname = socket.gethostname()
+        object_name = f'wordpress/{config.website_domain}/{hostname}--{file_name}'
 
-    try:
-        response = s3_client.upload_file(file_path, config.aws_bucket, object_name)
-    except ClientError as e:
-        print(e)
-        return False
+        try:
+            response = s3_client.upload_file(file_path, config.aws_bucket, object_name)
+        except ClientError as e:
+            print(e)
+            return False
 
     return True
 
@@ -153,9 +154,11 @@ def main():
             ex_struct = prepare_export_struct(occ, md)
             upload_json_to_s3(ex_struct, new_last_id)
 
-            save_last_log_id(new_last_id)
-
-            print (f'[+] Updated the log file. Last ID is now: {new_last_id}')
+            if not args.is_dry:
+                save_last_log_id(new_last_id)
+                print (f'[+] Updated the log file. Last ID is now: {new_last_id}')
+            else:
+                print (f'[+] Dry run, nothing was uploaded.')
         else:
             print ("[-] Nothing to update.")
 
@@ -166,6 +169,7 @@ def main():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Ships WordPress security audit logs to Amazon S3 bucket.')
     parser.add_argument('-c', '--config', help='Path for another config file (without the py extension).', type=file_path, dest='config_file', default='config')
+    parser.add_argument('--dry-run', help='Do not update the logs delta and do not ship it to S3.', action='store_true', dest='is_dry')
 
     args = parser.parse_args()
 
